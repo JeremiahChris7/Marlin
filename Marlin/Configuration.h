@@ -271,7 +271,7 @@
 // Comment the following line to disable PID and enable bang-bang.
 #define PIDTEMP
 #define BANG_MAX 85 // limits current to nozzle while in bang-bang mode; 255=full current
-#define PID_MAX BANG_MAX // limits current to nozzle while PID is active (see PID_FUNCTIONAL_RANGE below); 255=full current
+#define PID_MAX 60 // limits current to nozzle while PID is active (see PID_FUNCTIONAL_RANGE below); 255=full current
 #if ENABLED(PIDTEMP)
   //#define PID_AUTOTUNE_MENU // Add PID Autotune to the LCD "Temperature" menu to run M303 and apply the result.
   //#define PID_DEBUG // Sends debug data to the serial port.
@@ -285,10 +285,15 @@
   #define K1 0.95 //smoothing factor within the PID
 
   // If you are using a pre-configured hotend then you can use one of the value sets by uncommenting it
+  
+  //Rigidbot modded
+  #define  DEFAULT_Kp 3.53
+  #define  DEFAULT_Ki 0.63
+  #define  DEFAULT_Kd 4.94
   // Ultimaker
-  #define  DEFAULT_Kp 7.44
-  #define  DEFAULT_Ki 0.92
-  #define  DEFAULT_Kd 15.00
+  //#define  DEFAULT_Kp 7.44
+  //#define  DEFAULT_Ki 0.92
+  //#define  DEFAULT_Kd 15.00
 
   // MakerGear
   //#define  DEFAULT_Kp 7.0
@@ -608,7 +613,7 @@
 #define X_MIN_POS 0
 #define Y_MIN_POS 0
 #define Z_MIN_POS 0
-#define X_MAX_POS 230
+#define X_MAX_POS 254
 #define Y_MAX_POS 254
 #define Z_MAX_POS 230
 
