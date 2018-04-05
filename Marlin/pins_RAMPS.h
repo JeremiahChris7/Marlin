@@ -113,8 +113,6 @@
 #define E1_ENABLE_PIN      30
 #define E1_CS_PIN          44
 
-#define SDSS               53
-#define LED_PIN            13
 
 #if ENABLED(HAVE_TMC2208)
   /**
@@ -139,10 +137,10 @@
    * Software serial
    */
 
-#define PS_ON_PIN          12
-#define TEMP_0_PIN         13   // ANALOG NUMBERING
-#define TEMP_1_PIN         13   // ANALOG NUMBERING
-#define TEMP_BED_PIN       14   // ANALOG NUMBERING
+  #define X_SERIAL_TX_PIN    59
+  #define X_SERIAL_RX_PIN    63
+  #define X2_SERIAL_TX_PIN   -1
+  #define X2_SERIAL_RX_PIN   -1
 
   #define Y_SERIAL_TX_PIN    64
   #define Y_SERIAL_RX_PIN    40
@@ -227,7 +225,6 @@
 #elif ENABLED(IS_RAMPS_EFF)                    // Hotend, Fan, Fan
   #define FAN_PIN        RAMPS_D9_PIN
   #define FAN1_PIN       RAMPS_D8_PIN
-  #define CONTROLLERFAN_PIN  -1
 #elif ENABLED(IS_RAMPS_SF)                     // Spindle, Fan
   #define FAN_PIN        RAMPS_D8_PIN
 #else                                          // Non-specific are "EFB" (i.e., "EFBF" or "EFBE")
@@ -362,7 +359,6 @@
     #endif
 
     #if DISABLED(NEWPANEL)
-      #define BEEPER_PIN 33
       // Buttons are attached to a shift register
       // Not wired yet
       //#define SHIFT_CLK       38
@@ -379,7 +375,6 @@
   #if ENABLED(NEWPANEL)
 
     #if ENABLED(REPRAP_DISCOUNT_SMART_CONTROLLER)
-      #define BEEPER_PIN 37
 
       #define BEEPER_PIN        37
 
@@ -424,7 +419,6 @@
       #define SD_DETECT_PIN     49
 
     #elif ENABLED(VIKI2) || ENABLED(miniVIKI)
-      #define BEEPER_PIN       33
 
       #define DOGLCD_CS         45
       #define DOGLCD_A0         44
@@ -442,10 +436,6 @@
       #define SD_DETECT_PIN     -1 // Pin 49 for display sd interface, 72 for easy adapter board
       #define KILL_PIN          31
 
-      #if ENABLED(TEMP_STAT_LEDS)
-        #define STAT_LED_RED   32
-        #define STAT_LED_BLUE  35
-      #endif
     #elif ENABLED(ELB_FULL_GRAPHIC_CONTROLLER)
 
       #define DOGLCD_CS         29
@@ -487,12 +477,6 @@
       #define KILL_PIN          64
 
     #elif ENABLED(MINIPANEL)
-      #define BEEPER_PIN 42
-      // Pins for DOGM SPI LCD Support
-      #define DOGLCD_A0  44
-      #define DOGLCD_CS  66
-      #define LCD_PIN_BL 65 // backlight LED on A11/D65
-      #define SDSS   53
 
       #define BEEPER_PIN        42
       // not connected to a pin
