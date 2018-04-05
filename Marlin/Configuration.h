@@ -162,7 +162,6 @@
 #endif
 
 // A dual extruder that uses a single stepper motor
-// Don't forget to set SSDE_SERVO_ANGLES and HOTEND_OFFSET_X/Y/Z
 //#define SWITCHING_EXTRUDER
 #if ENABLED(SWITCHING_EXTRUDER)
   #define SWITCHING_EXTRUDER_SERVO_NR 0
@@ -291,6 +290,7 @@
 #define TEMP_SENSOR_1 0
 #define TEMP_SENSOR_2 0
 #define TEMP_SENSOR_3 0
+#define TEMP_SENSOR_4 0
 #define TEMP_SENSOR_BED 1
 
 // Dummy thermistor constant temperature readings, for use with 998 and 999
@@ -319,6 +319,7 @@
 #define HEATER_1_MINTEMP 5
 #define HEATER_2_MINTEMP 5
 #define HEATER_3_MINTEMP 5
+#define HEATER_4_MINTEMP 5
 #define BED_MINTEMP 5
 
 // When temperature exceeds max temp, your heater will be switched off.
@@ -340,6 +341,7 @@
 #define PIDTEMP
 #define BANG_MAX 85 // limits current to nozzle while in bang-bang mode; 255=full current
 #define PID_MAX 60 // limits current to nozzle while PID is active (see PID_FUNCTIONAL_RANGE below); 255=full current
+#define PID_K1 0.95      // Smoothing factor within the PID
 #if ENABLED(PIDTEMP)
   //#define PID_AUTOTUNE_MENU // Add PID Autotune to the LCD "Temperature" menu to run M303 and apply the result.
   //#define PID_DEBUG // Sends debug data to the serial port.
@@ -349,11 +351,9 @@
                                   // Set/get with gcode: M301 E[extruder number, 0-2]
   #define PID_FUNCTIONAL_RANGE 10 // If the temperature difference between the target temperature and the actual temperature
                                   // is more than PID_FUNCTIONAL_RANGE then the PID will be shut off and the heater will be set to min/max.
-  #define PID_INTEGRAL_DRIVE_MAX PID_MAX  //limit for the integral term
-  #define K1 0.95 //smoothing factor within the PID
 
   // If you are using a pre-configured hotend then you can use one of the value sets by uncommenting it
-  
+
   //Rigidbot modded
   #define  DEFAULT_Kp 2.87
   #define  DEFAULT_Ki 0.55
@@ -400,8 +400,6 @@
 #if ENABLED(PIDTEMPBED)
 
   //#define PID_BED_DEBUG // Sends debug data to the serial port.
-
-  #define PID_BED_INTEGRAL_DRIVE_MAX MAX_BED_POWER //limit for the integral term
 
   //120V 250W silicone heater into 4mm borosilicate (MendelMax 1.5+)
   //from FOPDT model - kp=.39 Tp=405 Tdead=66, Tc set to 79.2, aggressive factor of .15 (vs .1, 1, 10)
@@ -506,6 +504,76 @@
 #define Z_MAX_ENDSTOP_INVERTING true // set to true to invert the logic of the endstop.
 #define Z_MIN_PROBE_ENDSTOP_INVERTING true // set to true to invert the logic of the endstop.
 
+// Enable this feature if all enabled endstop pins are interrupt-capable.
+// This will remove the need to poll the interrupt pins, saving many CPU cycles.
+//#define ENDSTOP_INTERRUPTS_FEATURE
+
+//=============================================================================
+//============================== Movement Settings ============================
+//=============================================================================
+// @section motion
+
+/**
+ * Default Settings
+ *
+ * These settings can be reset by M502
+ *
+ * Note that if EEPROM is enabled, saved values will override these.
+ */
+
+/**
+ * With this option each E stepper can have its own factors for the
+ * following movement settings. If fewer factors are given than the
+ * total number of extruders, the last value applies to the rest.
+ */
+//#define DISTINCT_E_FACTORS
+
+/**
+ * Default Axis Steps Per Unit (steps/mm)
+ * Override with M92
+ *                                      X, Y, Z, E0 [, E1[, E2[, E3[, E4]]]]
+ */
+#define DEFAULT_AXIS_STEPS_PER_UNIT   { 80, 80, 4000, 500 }
+
+/**
+ * Default Max Feed Rate (mm/s)
+ * Override with M203
+ *                                      X, Y, Z, E0 [, E1[, E2[, E3[, E4]]]]
+ */
+#define DEFAULT_MAX_FEEDRATE          { 300, 300, 5, 25 }
+
+/**
+ * Default Max Acceleration (change/s) change = mm/s
+ * (Maximum start speed for accelerated moves)
+ * Override with M201
+ *                                      X, Y, Z, E0 [, E1[, E2[, E3[, E4]]]]
+ */
+#define DEFAULT_MAX_ACCELERATION      { 3000, 3000, 100, 10000 }
+
+/**
+ * Default Acceleration (change/s) change = mm/s
+ * Override with M204
+ *
+ *   M204 P    Acceleration
+ *   M204 R    Retract Acceleration
+ *   M204 T    Travel Acceleration
+ */
+#define DEFAULT_ACCELERATION          600    // X, Y, Z and E acceleration in mm/s^2 for printing moves
+#define DEFAULT_RETRACT_ACCELERATION  1000    // E acceleration in mm/s^2 for retracts
+#define DEFAULT_TRAVEL_ACCELERATION   3000    // X, Y, Z acceleration in mm/s^2 for travel (non printing) moves
+/**
+ * Default Jerk (mm/s)
+ * Override with M205 X Y Z E
+ *
+ * "Jerk" specifies the minimum speed change that requires acceleration.
+ * When changing speed and direction, if the difference is less than the
+ * value set here, it may happen instantaneously.
+ */
+#define DEFAULT_XJERK                 10.0
+#define DEFAULT_YJERK                 10.0
+#define DEFAULT_ZJERK                  0.3
+#define DEFAULT_EJERK                  5.0
+
 //===========================================================================
 //============================= Z Probe Options =============================
 //===========================================================================
@@ -515,10 +583,52 @@
 // See http://marlinfw.org/docs/configuration/probes.html
 //
 
-// A Fix-Mounted Probe either doesn't deploy or needs manual deployment.
-// For example an inductive probe, or a setup that uses the nozzle to probe.
-// An inductive probe must be deactivated to go below
-// its trigger-point if hardware endstops are active.
+/**
+ * Z_MIN_PROBE_USES_Z_MIN_ENDSTOP_PIN
+ *
+ * Enable this option for a probe connected to the Z Min endstop pin.
+ */
+#define Z_MIN_PROBE_USES_Z_MIN_ENDSTOP_PIN
+
+/**
+ * Z_MIN_PROBE_ENDSTOP
+ *
+ * Enable this option for a probe connected to any pin except Z-Min.
+ * (By default Marlin assumes the Z-Max endstop pin.)
+ * To use a custom Z Probe pin, set Z_MIN_PROBE_PIN below.
+ *
+ *  - The simplest option is to use a free endstop connector.
+ *  - Use 5V for powered (usually inductive) sensors.
+ *
+ *  - RAMPS 1.3/1.4 boards may use the 5V, GND, and Aux4->D32 pin:
+ *    - For simple switches connect...
+ *      - normally-closed switches to GND and D32.
+ *      - normally-open switches to 5V and D32.
+ *
+ * WARNING: Setting the wrong pin may have unexpected and potentially
+ * disastrous consequences. Use with caution and do your homework.
+ *
+ */
+//#define Z_MIN_PROBE_ENDSTOP
+
+/**
+ * Probe Type
+ *
+ * Allen Key Probes, Servo Probes, Z-Sled Probes, FIX_MOUNTED_PROBE, etc.
+ * Activate one of these to use Auto Bed Leveling below.
+ */
+
+/**
+ * The "Manual Probe" provides a means to do "Auto" Bed Leveling without a probe.
+ * Use G29 repeatedly, adjusting the Z height at each point with movement commands
+ * or (with LCD_BED_LEVELING) the LCD controller.
+ */
+//#define PROBE_MANUALLY
+
+/**
+ * A Fix-Mounted Probe either doesn't deploy or needs manual deployment.
+ *   (e.g., an inductive probe or a nozzle-based probe-switch.)
+ */
 //#define FIX_MOUNTED_PROBE
 
 /**
@@ -553,8 +663,6 @@
 //#define Z_PROBE_SLED
 //#define SLED_DOCKING_OFFSET 5  // The extra distance the X axis must travel to pickup the sled. 0 should be fine but you can push it further if you'd like.
 
-// Z Probe to nozzle (X,Y) offset, relative to (0, 0).
-// X and Y offsets must be integers.
 //
 // For Z_PROBE_ALLEN_KEY see the Delta example configurations.
 //
@@ -590,8 +698,6 @@
 
 // Speed for the "accurate" probe of each point
 #define Z_PROBE_SPEED_SLOW (Z_PROBE_SPEED_FAST / 2)
-// Use double touch for probing
-//#define PROBE_DOUBLE_TOUCH
 
 // The number of probes to perform at each point.
 //   Set to 2 for a fast/slow probe, using the second probe result.
@@ -615,30 +721,7 @@
 #define Z_CLEARANCE_DEPLOY_PROBE   10 // Z Clearance for Deploy/Stow
 #define Z_CLEARANCE_BETWEEN_PROBES  5 // Z Clearance between probe points
 
-// Enable Z_MIN_PROBE_USES_Z_MIN_ENDSTOP_PIN to use the Z_MIN_PIN for your Z_MIN_PROBE.
-// The Z_MIN_PIN will then be used for both Z-homing and probing.
-#define Z_MIN_PROBE_USES_Z_MIN_ENDSTOP_PIN
-
-// To use a probe you must enable one of the two options above!
-
-// This option disables the use of the Z_MIN_PROBE_PIN
-// To enable the Z probe pin but disable its use, uncomment the line below. This only affects a
-// Z probe switch if you have a separate Z min endstop also and have activated Z_MIN_PROBE_ENDSTOP above.
-// If you're using the Z MIN endstop connector for your Z probe, this has no effect.
-//#define DISABLE_Z_MIN_PROBE_ENDSTOP
-
-// Enable Z Probe Repeatability test to see how accurate your probe is
-//#define Z_MIN_PROBE_REPEATABILITY_TEST
-
-//
-// Probe Raise options provide clearance for the probe to deploy, stow, and travel.
-//
-#define Z_PROBE_DEPLOY_HEIGHT 15 // Raise to make room for the probe to deploy / stow
-#define Z_PROBE_TRAVEL_HEIGHT 5  // Raise between probing points.
-
-//
 // For M851 give a range for adjusting the Z probe offset
-//
 #define Z_PROBE_OFFSET_RANGE_MIN -20
 #define Z_PROBE_OFFSET_RANGE_MAX 20
 
@@ -696,9 +779,6 @@
 #define X_HOME_DIR -1
 #define Y_HOME_DIR -1
 #define Z_HOME_DIR -1
-
-#define min_software_endstops true // If true, axis won't move to coordinates less than HOME_POS.
-#define max_software_endstops true  // If true, axis won't move to coordinates greater than the defined lengths below.
 
 // @section machine
 
@@ -1003,9 +1083,9 @@
   #define XY_DIAG_BD 282.8427124746
   #define XY_SIDE_AD 200
 
-#define DEFAULT_ACCELERATION          600    // X, Y, Z and E acceleration in mm/s^2 for printing moves
-#define DEFAULT_RETRACT_ACCELERATION  1000    // E acceleration in mm/s^2 for retracts
-#define DEFAULT_TRAVEL_ACCELERATION   3000    // X, Y, Z acceleration in mm/s^2 for travel (non printing) moves
+  // Or, set the default skew factors directly here
+  // to override the above measurements:
+  #define XY_SKEW_FACTOR 0.0
 
   //#define SKEW_CORRECTION_FOR_Z
   #if ENABLED(SKEW_CORRECTION_FOR_Z)
@@ -1353,12 +1433,6 @@
 //#define ULTIPANEL
 
 //
-// Cartesio UI
-// http://mauk.cc/webshop/cartesio-shop/electronics/user-interface
-//
-//#define CARTESIO_UI
-
-//
 // PanelOne from T3P3 (via RAMPS 1.4 AUX2/AUX3)
 // http://reprap.org/wiki/PanelOne
 //
@@ -1698,35 +1772,5 @@
 //
 // With this option servos are powered only during movement, then turned off to prevent jitter.
 //#define DEACTIVATE_SERVOS_AFTER_MOVE
-
-/**********************************************************************\
- * Support for a filament diameter sensor
- * Also allows adjustment of diameter at print time (vs  at slicing)
- * Single extruder only at this point (extruder 0)
- *
- * Motherboards
- * 34 - RAMPS1.4 - uses Analog input 5 on the AUX2 connector
- * 81 - Printrboard - Uses Analog input 2 on the Exp1 connector (version B,C,D,E)
- * 301 - Rambo  - uses Analog input 3
- * Note may require analog pins to be defined for different motherboards
- **********************************************************************/
-// Uncomment below to enable
-//#define FILAMENT_WIDTH_SENSOR
-
-#define DEFAULT_NOMINAL_FILAMENT_DIA 3.00  //Enter the diameter (in mm) of the filament generally used (3.0 mm or 1.75 mm) - this is then used in the slicer software.  Used for sensor reading validation
-
-#if ENABLED(FILAMENT_WIDTH_SENSOR)
-  #define FILAMENT_SENSOR_EXTRUDER_NUM 0   //The number of the extruder that has the filament sensor (0,1,2)
-  #define MEASUREMENT_DELAY_CM        14   //measurement delay in cm.  This is the distance from filament sensor to middle of barrel
-
-  #define MEASURED_UPPER_LIMIT         3.30  //upper limit factor used for sensor reading validation in mm
-  #define MEASURED_LOWER_LIMIT         1.90  //lower limit factor for sensor reading validation in mm
-  #define MAX_MEASUREMENT_DELAY       20     //delay buffer size in bytes (1 byte = 1cm)- limits maximum measurement delay allowable (must be larger than MEASUREMENT_DELAY_CM  and lower number saves RAM)
-
-  #define DEFAULT_MEASURED_FILAMENT_DIA  DEFAULT_NOMINAL_FILAMENT_DIA  //set measured to nominal initially
-
-  //When using an LCD, uncomment the line below to display the Filament sensor data on the last line instead of status.  Status will appear for 5 sec.
-  //#define FILAMENT_LCD_DISPLAY
-#endif
 
 #endif // CONFIGURATION_H
